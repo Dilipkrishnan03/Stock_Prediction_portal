@@ -1,94 +1,171 @@
-import axios from 'axios'
-import {useEffect,useState} from 'react'
-import axiosInstance from '../../axiosInstance'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSpinner } from '@fortawesome/free-solid-svg-icons'
+import axios from 'axios';
+import {useEffect,useState} from 'react';
+import axiosInstance from '../../axiosInstance'; // Assuming this is configured with your base URL and token
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
-    // Fetch protected data from the backend
-    const [ticker, setTicker] = useState('')
-    const [error,setError]= useState(null)
-    const [loading, setLoading] = useState(false)
-    const [plot,setPlot] = useState()
-    const [ma100,setMa100] = useState()
-    const [ma200,setMa200] = useState()
-    
+    // Fetch protected data from the backend - This useEffect seems unrelated to the dashboard's core function
+    // of fetching stock data. It might be for an initial authentication check.
     useEffect(()=> {
         const fetchProtectedData = async () => {
             try{
-                const response = await axiosInstance.get('/protected-view/')
+                const response = await axiosInstance.get('/protected-view/');
+  
             }catch(error){
-                console.error("Error fetching data:", error);
+                console.error("Error fetching protected data:", error);
+                // Optionally, handle redirection or display an error message for protected data fetch
             }
-    }
+        }
         fetchProtectedData();
-    },[])
+    },[]);
+
+    const [ticker, setTicker] = useState('');
+    const [error,setError]= useState(null);
+    const [loading, setLoading] = useState(false);
+    const [plot,setPlot] = useState(null);
+    const [ma100,setMa100] = useState(null);
+    const [ma200,setMa200] = useState(null);
+    const [currentPrice, setCurrentPrice] = useState(null); // New state for current price
 
     const handleSubmit= async(e)=>{
-      e.preventDefault()
-      setLoading(true)
+      e.preventDefault();
+      setLoading(true);
+      setError(null);
+      setPlot(null);
+      setMa100(null);
+      setMa200(null);
+      setCurrentPrice(null); // Clear previous current price
+
       try{
         const response = await axiosInstance.post('/predict/',{
           ticker: ticker
-        })
-        console.log(response.data)
-        const backendRoot = import.meta.env.VITE_BACKEND_ROOT;
-        const plotUrl = `${backendRoot}${response.data.plot_img}`;
-        const ma100Url = `${backendRoot}${response.data.plot_100_dma}`;
-        const ma200Url = `${backendRoot}${response.data.plot_200_dma}`;
-        console.log(plotUrl);
-        setPlot(plotUrl); // Set the plot URL to state
-        setMa100(ma100Url); // Set the 100-day moving average plot URL to state
-        setMa200(ma200Url); // Set the 200-day moving average plot URL to state
-        //set plot
-        if(response.data.error){
-          setError(response.data.error)
+        });
+
+        if(response.data.error) {
+          setError(response.data.error);
+        } else {
+          const backendRoot = import.meta.env.VITE_BACKEND_ROOT;
+          // Set current price
+          if (response.data.current_price !== undefined && response.data.current_price !== null) {
+              setCurrentPrice(response.data.current_price);
+          } else {
+              setCurrentPrice(null); // Explicitly clear if not provided
+          }
+
+          // Set plot URLs only if they exist
+          setPlot(response.data.plot_img ? `${backendRoot}${response.data.plot_img}` : null);
+          setMa100(response.data.plot_100_dma ? `${backendRoot}${response.data.plot_100_dma}` : null);
+          setMa200(response.data.plot_200_dma ? `${backendRoot}${response.data.plot_200_dma}` : null);
         }
 
-      }catch(error){
-        console.error("Error There is some error in the API request:", error);
+      }catch(err){
+        console.error("Error in API request:", err);
+        setError("Failed to fetch prediction or stock data. Please check the ticker or try again later.");
+        setPlot(null);
+        setMa100(null);
+        setMa200(null);
+        setCurrentPrice(null); // Ensure current price is cleared on error
       }finally{
-        setLoading(false)
+        setLoading(false);
       }
-    }
-  return (
-    <div className='container'>
-      <div className='row'>
-        <div className='col-md-6-mx-auto'>    
-          <h1 className='text-center'>Dashboard</h1>
-          <form onSubmit={handleSubmit}>
-            <input  type="text" className='form-control' placeholder='Enter Stock Ticker' 
-            onChange={(e) =>setTicker(e.target.value)} required
-            />
-            <small>{error && <div className='text-danger'></div>}</small>
-            <button type='submit' className='btn btn-info mt-2'>
-            {loading ? <span><FontAwesomeIcon icon={faSpinner} spin/>Please Wait...</span>:"See Prediction"}
-            </button>
-          </form>
-        </div>  
-        {/*Print prediction plot*/}
-        <div className='prediction mt-5'>
-          <div className='p-3'>
-            {plot && (
-              <img src={plot} style={{maxWidth:"100%"}}/>
-            )}
-          </div>
-          <div className='p-3'>
-            {ma100 && (
-              <img src={ma100} style={{maxWidth:"100%"}}/>
-            )}
+    };
+
+    return (
+      <div className='container' style={{ fontFamily: 'Georgia, serif' }}>
+        <div className='row'>
+          <div className='col-md-6-mx-auto'>
+            <h1 className='text-center' style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
+              Dashboard
+            </h1>
+            <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                className='form-control'
+                placeholder='Enter Stock Ticker (e.g., AAPL)'
+                onChange={(e) => setTicker(e.target.value.toUpperCase())} 
+                value={ticker} 
+                required
+              />
+              <small>{error && <div className='text-danger mt-2'>{error}</div>}</small>
+              <button type='submit' className='btn btn-info mt-2' disabled={loading}>
+                {loading ? <span><FontAwesomeIcon icon={faSpinner} spin/> Please Wait...</span> : "See Prediction"}
+              </button>
+            </form>
+
+            {/* Display Current Stock Price */}
+{currentPrice !== null && !loading && !error && (
+    <div
+        className='mt-4 p-3'
+        style={{
+            backgroundColor: '#f8f9fa', 
+            borderRadius: '15px',      
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
+            textAlign: 'center',
+            border: '1px solid #e0e0e0', 
+            padding: '25px',            
+            fontFamily: 'Arial, sans-serif' 
+        }}
+    >
+        <h3 style={{
+            fontSize: '1.6rem',       // Slightly smaller for hierarchy
+            fontWeight: 'normal',     // Less bold for the label
+            color: '#343a40',         // Darker text for readability
+            marginBottom: '10px'      // Space below the heading
+        }}>
+            Current Price for <span style={{ fontWeight: 'bold', color: '#0056b3' }}>{ticker}</span>:
+        </h3>
+        <p style={{
+            fontSize: '2.8rem',       // Larger font for the price
+            fontWeight: 'bolder',     // Make the price stand out
+            color: '#28a745',         // Green for positive/current price, or choose another vibrant color
+            margin: '0'               // Remove default paragraph margin
+        }}>
+            ${currentPrice.toFixed(2)}
+        </p>
+        <p style={{
+            fontSize: '0.9rem',
+            color: '#6c757d',
+            marginTop: '5px'
+        }}>
+            (Data from Yahoo Finance)
+        </p>
+    </div>
+)}
 
           </div>
-          <div className='p-3'>
-            {ma200 && (
-              <img src={ma200} style={{maxWidth:"100%"}}/>
+          {/*Print prediction plot*/}
+          <div className='prediction mt-5'>
+            <div className='p-3'>
+              {plot && (
+                <img src={plot} style={{maxWidth:"100%"}} alt="Closing Price Plot"/>
+              )}
+            </div>
+            <div className='p-3'>
+              {ma100 && (
+                <img src={ma100} style={{maxWidth:"100%"}} alt="100-Day Moving Average Plot"/>
+              )}
+            </div>
+            <div className='p-3'>
+              {ma200 && (
+                <img src={ma200} style={{maxWidth:"100%"}} alt="200-Day Moving Average Plot"/>
+              )}
+            </div>
+             {/* Message if no plots are available but no explicit error */}
+            {!loading && !error && !plot && !ma100 && !ma200 && currentPrice === null && (
+                <div className="text-center mt-3">
+                    <p>Enter a stock ticker to see historical data and predictions.</p>
+                </div>
             )}
-
+             {!loading && error && !plot && !ma100 && !ma200 && (
+                <div className="text-center mt-3 text-danger">
+                    <p>No charts available due to an error or missing data.</p>
+                </div>
+            )}
           </div>
         </div>
-    </div>
-    </div>  
-  )
+      </div>
+    );
 }
 
-export default Dashboard
+export default Dashboard;

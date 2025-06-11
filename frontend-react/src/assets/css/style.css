@@ -1,4 +1,4 @@
-body{
+/* body{
     background-color: #212529;
 }
 .bg-light-dark{
@@ -11,4 +11,87 @@ body{
 }
 .container{
     flex: 1;
-}   
+}    */
+
+/* In your CSS file (e.g., App.css or index.css) */
+
+body {
+    background-color: #003049; /* Very dark blue for the main background */
+    color: #fdf0d5; /* Light cream for default text color */
+    font-family: 'Georgia', serif; /* Set Georgia as the default font for the whole body */
+}
+
+.bg-light-dark {
+    background-color: #669bbc; /* Blue for elements that were previously 'light-dark' */
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    flex: 1;
+}
+
+/* Base button style - ENSURE this exists or add it */
+.btn {
+    background-color: #fdf0d5; /* Light cream */
+    color: #003049; /* Dark text for contrast */
+    border: 1px solid #fdf0d5;
+    font-family: 'Georgia', serif; /* Apply Georgia font here! */
+}
+
+.btn:hover {
+    background-color: #e0e0e0; /* Slightly darker cream on hover */
+    border-color: #e0e0e0;
+}
+
+/* Example: A primary action button (using the blue) */
+.btn-primary {
+    background-color: #669bbc; /* Blue */
+    color: #fdf0d5; /* Light cream text */
+    border: 1px solid #669bbc;
+    font-family: 'Georgia', serif; /* Apply Georgia font here! */
+}
+
+.btn-primary:hover {
+    background-color: #5a8bae; /* Slightly darker blue on hover */
+    border-color: #5a8bae;
+}
+
+/* Example: A warning/danger button (using the dark red) */
+.btn-warning {
+    background-color: #780000; /* Dark red */
+    color: #fdf0d5; /* Light cream text */
+    border: 1px solid #780000;
+    font-family: 'Georgia', serif; /* Apply Georgia font here! */
+}
+
+.btn-warning:hover {
+    background-color: #600000; /* Darker red on hover */
+    border-color: #600000;
+}
+
+/* Example: A more prominent danger/delete button (using the bright red) */
+.btn-danger {
+    background-color: #c1121f; /* Bright red */
+    color: #fdf0d5; /* Light cream text */
+    border: 1px solid #c1121f;
+    font-family: 'Georgia', serif; /* Apply Georgia font here! */
+}
+
+.btn-danger:hover {
+    background-color: #a70e1b; /* Darker bright red on hover */
+    border-color: #a70e1b;
+}
+
+/* If you have text links that need these colors, for example */
+a.text-custom-blue {
+    color: #669bbc !important;
+}
+
+a.text-custom-red {
+    color: #c1121f !important;
+}

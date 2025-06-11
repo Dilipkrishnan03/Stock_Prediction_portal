@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import os
 from django.conf import settings
-from .utils import save_plot
+from .utils import save_plot # Assuming this saves the plot and returns its URL
 from sklearn.preprocessing import MinMaxScaler
 
 
@@ -21,14 +21,32 @@ class StockPredictionAPIView(APIView):
         if serializer.is_valid():
             ticker = serializer.validated_data['ticker']
 
-            #Fetch the data from yfinace
+            # --- Fetch Current Stock Price ---
+            current_price = None
+            try:
+                stock_info = yf.Ticker(ticker).info
+                current_price = stock_info.get('regularMarketPrice')
+                if current_price is None:
+                    # Fallback for some tickers that might not have 'regularMarketPrice'
+                    # Try 'currentPrice' or 'previousClose' as alternatives if needed
+                    current_price = stock_info.get('currentPrice')
+                    if current_price is None:
+                        current_price = stock_info.get('previousClose')
+            except Exception as e:
+                print(f"Error fetching current price for {ticker}: {e}")
+                # You might want to handle this error more gracefully on the frontend
+                pass # Continue with the rest of the logic even if current price fails
+
+            #Fetch the data from yfinance for plots
             now = datetime.now()
             start = datetime(now.year - 10, now.month, now.day)
             end = now
             df = yf.download(ticker,start,end)
             print(df)
             if df.empty:
-                return Response({'error':"No data found","status":status.HTTP_404_NOT_FOUND})
+                return Response({'error':"No data found for charts. Current price might still be available.",
+                                 'current_price': current_price, # Send current price even if historical data is empty
+                                 "status":status.HTTP_404_NOT_FOUND})
             df= df.reset_index()
             print(df)
 
@@ -40,11 +58,13 @@ class StockPredictionAPIView(APIView):
             plt.xlabel('Days')
             plt.ylabel('Price')
             plt.legend()
+            plt.grid(True) # Add grid for better readability
 
             # Save the plot to a file
             plot_img_path = f'{ticker}_plot.png'
             plot_img = save_plot(plot_img_path)
 
+            # 100 Days Moving Average
             ma100 = df.Close.rolling(100).mean()
             plt.switch_backend('AGG')
             plt.figure(figsize=(12, 5))
@@ -54,6 +74,7 @@ class StockPredictionAPIView(APIView):
             plt.xlabel('Days')
             plt.ylabel('Price')
             plt.legend()
+            plt.grid(True)
             plot_img_path = f'{ticker}_100_dma.png'
             plot_100_dma = save_plot(plot_img_path)
 
@@ -63,19 +84,21 @@ class StockPredictionAPIView(APIView):
             plt.figure(figsize=(12, 5))
             plt.plot(df.Close, label='Closing Price')
             plt.plot(ma100, 'r', label='100 DMA')
-            plt.plot(ma100, 'g', label='200 DMA')
+            plt.plot(ma200, 'g', label='200 DMA')
             plt.title(f'200 Days Moving Average of {ticker}')
             plt.xlabel('Days')
             plt.ylabel('Price')
             plt.legend()
+            plt.grid(True)
             plot_img_path = f'{ticker}_200_dma.png'
             plot_200_dma = save_plot(plot_img_path)
-
             
-
-
-
-            return Response({'status':'success',
-                             'plot_img': plot_img,
-                             'plot_100_dma':plot_100_dma,
-                             'plot_200_dma':plot_200_dma,})
+            return Response({
+                'status': 'success',
+                'current_price': current_price, # Send the current price
+                'plot_img': plot_img,
+                'plot_100_dma': plot_100_dma,
+                'plot_200_dma': plot_200_dma,
+            })
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
