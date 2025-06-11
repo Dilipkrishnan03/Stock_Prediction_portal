@@ -10,34 +10,27 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import os
 from django.conf import settings
-from .utils import save_plot # Assuming this saves the plot and returns its URL
+from .utils import save_plot 
 from sklearn.preprocessing import MinMaxScaler
 
 
-# Create your views here.
+
 class StockPredictionAPIView(APIView):
     def post(self,request):
         serializer= StockPredictionSerializer(data=request.data)
         if serializer.is_valid():
             ticker = serializer.validated_data['ticker']
-
-            # --- Fetch Current Stock Price ---
             current_price = None
             try:
                 stock_info = yf.Ticker(ticker).info
                 current_price = stock_info.get('regularMarketPrice')
                 if current_price is None:
-                    # Fallback for some tickers that might not have 'regularMarketPrice'
-                    # Try 'currentPrice' or 'previousClose' as alternatives if needed
                     current_price = stock_info.get('currentPrice')
                     if current_price is None:
                         current_price = stock_info.get('previousClose')
             except Exception as e:
                 print(f"Error fetching current price for {ticker}: {e}")
-                # You might want to handle this error more gracefully on the frontend
-                pass # Continue with the rest of the logic even if current price fails
-
-            #Fetch the data from yfinance for plots
+                pass 
             now = datetime.now()
             start = datetime(now.year - 10, now.month, now.day)
             end = now
@@ -45,12 +38,12 @@ class StockPredictionAPIView(APIView):
             print(df)
             if df.empty:
                 return Response({'error':"No data found for charts. Current price might still be available.",
-                                 'current_price': current_price, # Send current price even if historical data is empty
+                                 'current_price': current_price,
                                  "status":status.HTTP_404_NOT_FOUND})
             df= df.reset_index()
             print(df)
 
-            # Generate Basic Plot
+            
             plt.switch_backend('AGG')
             plt.figure(figsize=(12, 5))
             plt.plot(df.Close, label='Closing Price')
@@ -58,7 +51,7 @@ class StockPredictionAPIView(APIView):
             plt.xlabel('Days')
             plt.ylabel('Price')
             plt.legend()
-            plt.grid(True) # Add grid for better readability
+            plt.grid(True) 
 
             # Save the plot to a file
             plot_img_path = f'{ticker}_plot.png'
@@ -95,7 +88,7 @@ class StockPredictionAPIView(APIView):
             
             return Response({
                 'status': 'success',
-                'current_price': current_price, # Send the current price
+                'current_price': current_price,
                 'plot_img': plot_img,
                 'plot_100_dma': plot_100_dma,
                 'plot_200_dma': plot_200_dma,
