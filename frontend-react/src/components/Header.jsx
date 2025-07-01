@@ -16,8 +16,9 @@ const Header = () => {
     navigate('/login')
   }
 
-  // Check if current page is dashboard
+  // Check current page
   const isDashboardPage = location.pathname === '/dashboard';
+  const isProfilePage = location.pathname === '/profile';
 
   return (
     <>
@@ -28,10 +29,17 @@ const Header = () => {
         <div>
           {isLoggedIn ? (
             <>
-              {/* Only show Dashboard button if NOT on dashboard page */}
+              {/* Show Dashboard button if NOT on dashboard page */}
               {!isDashboardPage && (
                 <>
                   <Button text='Dashboard' class="btn-info" url="/dashboard" />
+                  &nbsp;
+                </>
+              )}
+              {/* Show Profile button if NOT on profile page */}
+              {!isProfilePage && (
+                <>
+                  <Button text='Profile' class="btn-outline-info" url="/profile" />
                   &nbsp;
                 </>
               )}

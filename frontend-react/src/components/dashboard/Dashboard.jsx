@@ -1,12 +1,10 @@
 import axios from 'axios';
 import {useEffect,useState} from 'react';
-import axiosInstance from '../../axiosInstance'; // Assuming this is configured with your base URL and token
+import axiosInstance from '../../axiosinstance'; 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
-    // Fetch protected data from the backend - This useEffect seems unrelated to the dashboard's core function
-    // of fetching stock data. It might be for an initial authentication check.
     useEffect(()=> {
         const fetchProtectedData = async () => {
             try{
@@ -14,7 +12,6 @@ const Dashboard = () => {
   
             }catch(error){
                 console.error("Error fetching protected data:", error);
-                // Optionally, handle redirection or display an error message for protected data fetch
             }
         }
         fetchProtectedData();
@@ -26,8 +23,7 @@ const Dashboard = () => {
     const [plot,setPlot] = useState(null);
     const [ma100,setMa100] = useState(null);
     const [ma200,setMa200] = useState(null);
-    const [currentPrice, setCurrentPrice] = useState(null); // New state for current price
-
+    const [currentPrice, setCurrentPrice] = useState(null);
     const handleSubmit= async(e)=>{
       e.preventDefault();
       setLoading(true);
@@ -35,8 +31,7 @@ const Dashboard = () => {
       setPlot(null);
       setMa100(null);
       setMa200(null);
-      setCurrentPrice(null); // Clear previous current price
-
+      setCurrentPrice(null); 
       try{
         const response = await axiosInstance.post('/predict/',{
           ticker: ticker
@@ -46,14 +41,12 @@ const Dashboard = () => {
           setError(response.data.error);
         } else {
           const backendRoot = import.meta.env.VITE_BACKEND_ROOT;
-          // Set current price
+         
           if (response.data.current_price !== undefined && response.data.current_price !== null) {
               setCurrentPrice(response.data.current_price);
           } else {
-              setCurrentPrice(null); // Explicitly clear if not provided
+              setCurrentPrice(null); 
           }
-
-          // Set plot URLs only if they exist
           setPlot(response.data.plot_img ? `${backendRoot}${response.data.plot_img}` : null);
           setMa100(response.data.plot_100_dma ? `${backendRoot}${response.data.plot_100_dma}` : null);
           setMa200(response.data.plot_200_dma ? `${backendRoot}${response.data.plot_200_dma}` : null);
@@ -65,7 +58,7 @@ const Dashboard = () => {
         setPlot(null);
         setMa100(null);
         setMa200(null);
-        setCurrentPrice(null); // Ensure current price is cleared on error
+        setCurrentPrice(null); 
       }finally{
         setLoading(false);
       }
@@ -92,8 +85,6 @@ const Dashboard = () => {
                 {loading ? <span><FontAwesomeIcon icon={faSpinner} spin/> Please Wait...</span> : "See Prediction"}
               </button>
             </form>
-
-            {/* Display Current Stock Price */}
 {currentPrice !== null && !loading && !error && (
     <div
         className='mt-4 p-3'
@@ -108,18 +99,18 @@ const Dashboard = () => {
         }}
     >
         <h3 style={{
-            fontSize: '1.6rem',       // Slightly smaller for hierarchy
-            fontWeight: 'normal',     // Less bold for the label
-            color: '#343a40',         // Darker text for readability
-            marginBottom: '10px'      // Space below the heading
+            fontSize: '1.6rem',      
+            fontWeight: 'normal',     
+            color: '#343a40',         
+            marginBottom: '10px'      
         }}>
             Current Price for <span style={{ fontWeight: 'bold', color: '#0056b3' }}>{ticker}</span>:
         </h3>
         <p style={{
-            fontSize: '2.8rem',       // Larger font for the price
-            fontWeight: 'bolder',     // Make the price stand out
-            color: '#28a745',         // Green for positive/current price, or choose another vibrant color
-            margin: '0'               // Remove default paragraph margin
+            fontSize: '2.8rem',       
+            fontWeight: 'bolder',     
+            color: '#28a745',         
+            margin: '0'              
         }}>
             ${currentPrice.toFixed(2)}
         </p>
@@ -134,7 +125,7 @@ const Dashboard = () => {
 )}
 
           </div>
-          {/*Print prediction plot*/}
+
           <div className='prediction mt-5'>
             <div className='p-3'>
               {plot && (
